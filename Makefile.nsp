@@ -1,0 +1,27 @@
+CC = nspire-gcc
+
+CFLAGS = -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s -flto
+CFLAGS += -Wall -Isrc/tinyjpegdecoder -Isrc -Isrc/nsp -Dndlib
+LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto
+OUTPUT = simpleimgviewer
+
+SOURCES = ./src/main.c ./src/imgview.c ./src/lodepng.c 
+SOURCES +=  ./src/nsp/n2DLib.c ./src/nsp/control.c
+SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
+OBJS = ${SOURCES:.c=.o}
+
+all : ${OUTPUT}
+
+${OUTPUT}:${OBJS}
+	${CC} -o ${OUTPUT} ${OBJS} ${CFLAGS} ${LDFLAGS}
+
+gen:
+	genzehn --input ${OUTPUT} --output ${OUTPUT}.tns --compress
+	rm ${OUTPUT}
+	
+clean:
+	rm ./src/*.o
+	rm ./src/tinyjpegdecoder/*.o
+	rm ./src/nsp/*.o
+	rm ${OUTPUT}
+	rm ${OUTPUT}.tns

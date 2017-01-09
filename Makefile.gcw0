@@ -1,0 +1,26 @@
+TOOLCHAIN = /opt/gcw0-toolchain
+CC = $(TOOLCHAIN)/usr/bin/mipsel-linux-gcc
+
+CFLAGS = -O3 -mips32r2 -Wall `sdl-config --cflags` -Isrc/tinyjpegdecoder -Isrc -Isrc/sdl
+CFLAGS += -DNO_FILEBROWSER 
+LDFLAGS = -lSDLmain -lSDL -s
+OUTPUT = simpleimgviewer.elf
+
+SOURCES += ./src/imgview.c 
+SOURCES += ./src/sdl/n2DLib.c ./src/lodepng.c ./src/sdl/control.c
+SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
+OBJS = ${SOURCES:.c=.o}
+
+all: ${OUTPUT} pack
+
+${OUTPUT}:${OBJS}
+	${CC} -o ${OUTPUT} ${OBJS} ${CFLAGS} ${LDFLAGS} 
+	
+pack:
+	mv ${OUTPUT} ./opk/${OUTPUT}
+	
+clean:
+	rm ./src/*.o
+	rm ./src/tinyjpegdecoder/*.o
+	rm ./src/sdl/*.o
+	rm ./opk/${OUTPUT}

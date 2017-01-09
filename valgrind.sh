@@ -1,0 +1,1 @@
+valgrind --tool=memcheck --leak-check=yes ./simpleimgviewer.elf
