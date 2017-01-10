@@ -1,0 +1,41 @@
+ENTRY(_start)
+
+SECTIONS {
+		.text 0x10000000 - 0x38 : {
+			SHORT(0x0f80)
+            BYTE((_end - _start + 0x32)>>24)
+			BYTE((_end - _start + 0x32)>>16)
+			BYTE((_end - _start + 0x32)>>8)
+			BYTE((_end - _start + 0x32))
+            SHORT(0x4a80)
+			LONG(0x4d4d5544) /* string chars #1-4 (reverse) */
+            LONG(0x20534f59) /* string chars #5-8 (reverse) */
+            LONG(0x13802020) /* string chars #9-10(reverse) */
+            LONG(0x80463035)
+            LONG(0x30313513)
+            LONG(0x2e312680) /* version A. (reverse) */
+            LONG(0x20302e30) /* version B.C (reverse) */
+            LONG(0x00002e80)
+            LONG(0x00108880)
+            LONG(0x00000000)
+			LONG(0x7f800000)
+            BYTE((_end - _start)>>24)
+			BYTE((_end - _start)>>16)
+			BYTE((_end - _start)>>8)
+			BYTE((_end - _start))
+            _start = .;
+            *(.text._start)
+            *(.text.*)
+        }
+		
+        .bss : {
+            *(.bss*)
+        }
+
+        .data : {
+            *(.rodata*)
+            *(.data*)
+			_end = .;
+			SHORT(0xf0ff)
+        }
+}
