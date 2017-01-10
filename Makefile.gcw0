@@ -1,7 +1,7 @@
 TOOLCHAIN = /opt/gcw0-toolchain
 CC = $(TOOLCHAIN)/usr/bin/mipsel-linux-gcc
 
-CFLAGS = -O3 -mips32r2 -Wall `sdl-config --cflags` -Isrc/tinyjpegdecoder -Isrc -Isrc/sdl
+CFLAGS = -O2 -mips32r2 -Wall `sdl-config --cflags` -Isrc/tinyjpegdecoder -Isrc -Isrc/sdl
 CFLAGS += -DNO_FILEBROWSER 
 LDFLAGS = -lSDLmain -lSDL -s
 OUTPUT = simpleimgviewer.elf

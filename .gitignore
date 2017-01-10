@@ -10,6 +10,7 @@
 *.map
 *.wsc
 *.ws
+*.opk
 *.out
 *.prx
 *.sfo
@@ -22,7 +23,6 @@ experimental/
 /oswan/main/*.sh
 /oswan/main/*.txt
 ./oswan
-/opk/oswan
 main/sdl/*.o
 minizip/*.o
 main/emu/*.o
@@ -49,6 +49,6 @@ src/*.o
 src/nsp/*.o
 src/sdl/*.o
 src/tinyjpegdecoder/*.o
-opk/
 screenshots/
+opk/*.elf
 

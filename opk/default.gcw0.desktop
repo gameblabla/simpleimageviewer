@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Simple Image Viewer
+Comment=Image viewer
+Exec=simpleimageviewer.elf %f
+Icon=icon
+Terminal=false
+Categories=applications;
+X-OD-NeedsDownscaling=false
