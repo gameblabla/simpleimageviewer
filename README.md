@@ -1,4 +1,3 @@
-======================
 Simple Image Viewer
 ======================
 
@@ -23,7 +22,6 @@ but it allows you to zoom in/out the picture.
 
 The further you zoom in, the slower it gets though. (as of now)
 
-=======
 Controls
 =======
 
