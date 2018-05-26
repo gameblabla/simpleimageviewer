@@ -1,12 +1,14 @@
+#ifndef _IMGVIEW_H
+#define _IMGVIEW_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 #include "n2DLib.h"
 #include "lodepng.h"
-#include "tinyjpeg.h"
-#include "loadjpg.h"
 #include "control.h"
+#include "ok_jpg.h"
 
 int x = 0, y = 0;
 unsigned char done;
@@ -40,3 +42,5 @@ void Move_Image();
 void Show_Image(short x, short y);
 void Sync();
 void Set_fit_to_screen(unsigned char set_mode);
+
+#endif

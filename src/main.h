@@ -15,10 +15,10 @@
 	#define DEFAULT_TEXT "Simple File browser"
 	#define INST_TEXT "+/- Zoom, DEL= Switch modes"
 #else
-	#define TITLE_WINDOW "Simple Image Viewer"
+	#define TITLE_WINDOW "Simple Image Viewer v2.0"
 	#define FORMAT_FILE ".tns"
 	#define EXECUTABLE_NAME "simpleimgviewer.tns"
-	#define DEFAULT_TEXT "Select a JPG/PNG file"
+	#define DEFAULT_TEXT "Select a JPG/PNG/BMP file"
 	#define INST_TEXT "+/- Zoom, DEL= Switch modes"
 #endif
 

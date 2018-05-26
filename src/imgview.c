@@ -36,11 +36,7 @@ int imgview(const char* filename)
 	while(done)
 	{
 		Move_Image();
-		#ifdef _TINSPIRE
-		if (fit_to_screen == 1) Update_screen();
-		#else
 		Update_screen();
-		#endif
 		Sync();
 	}
 	
@@ -50,14 +46,23 @@ int imgview(const char* filename)
 	return 0;
 }
 
+unsigned short int rgb888Torgb565(unsigned int p1, unsigned int p2, unsigned int p3)
+{
+    unsigned int r, g, b;
+    r = p1 >> 3 << 11;
+    g = p2 >> 2 << 5;
+    b = p3 >> 3;
+    return (unsigned short int) (r | g | b);
+}
+
 int Load_Image(const char* path, unsigned char image_type)
 {
 	unsigned int i; 
 	unsigned int w , h;
 	unsigned char* image;
-	uint16_t* image2;
 	unsigned int picture_size;
-	
+	FILE* fp;
+	ok_jpg * imgj;
 	/* If file doesn't exist then exit */
 	if(access( path, F_OK ) == -1) 
 	{
@@ -87,20 +92,59 @@ int Load_Image(const char* path, unsigned char image_type)
 		*/
 		case PNG:
 			lodepng_decode24_file(&image, &w, &h, path);
-			picture = malloc((w * h) * sizeof(uint16_t));
+			picture = malloc(((w * h) * sizeof(uint16_t))+2);
 			if (!picture)
 			return 1;
 			picture[0] = w;
 			picture[1] = h;
 			for (i = 0; i < (w * h) - 2; i += 1) 
-				picture[i+2] = RGB565(image[i*3]/8, image[i*3+1]/4, image[i*3+2]/8);
+				picture[i+2] = rgb888Torgb565(image[i*3],image[i*3+1],image[i*3+2]);
 			if (image != NULL) free(image);
 		break;
-		/* This uses a stripped down version of Tiny JPEG Decoder.
-		 * Only baseline Jpegs are supported, no grayscale or progressive.
-		 * Check out tinyjpegdecoder/loadjpg.c on how to use the decoder.
-		*/
+
 		case JPG:
+			/* OK_JPG Implementation, supports Progressive pictures. */
+			fp = fopen(path, "rb");
+			imgj = ok_jpg_read(fp, OK_JPG_COLOR_FORMAT_RGBA);
+			fclose(fp);
+			w = imgj->width;
+			h = imgj->height;
+			picture = malloc(((w * h) * 3)+2);
+			picture[0] = w;
+			picture[1] = h;
+			uint8_t *dst = imgj->data;
+			for (i = 0; i < (w * h) - 2; i += 1) 
+			{
+				picture[i+2] = rgb888Torgb565(dst[i*3],dst[i*3+1],dst[i*3+2]);
+			}
+			ok_jpg_free(imgj);
+			
+			/* uJpeg (thread-safe fork of NanoJPEG) implementation
+			 * NanoJPEG does not seem to work very well...
+			 * This does not support progressive
+			 * */
+			#ifdef UJPEG_IMPLEMENTATION
+			ujImage jpgimg = ujCreate();
+			ujSetChromaMode(jpgimg, UJ_CHROMA_MODE_FAST);
+			jpgimg = ujDecodeFile(NULL, path);
+			
+			w = ujGetWidth(jpgimg);
+			h = ujGetHeight(jpgimg);
+			image = ujGetImage(jpgimg, NULL);
+			
+			picture = malloc(ujGetImageSize(jpgimg) + 2);
+			picture[0] = ujGetWidth(jpgimg);
+			picture[1] = ujGetHeight(jpgimg);
+			
+			for (i = 0; i < (picture[0] * picture[1])-2; i += 1) 
+			{
+				picture[i+2] = rgb888Torgb565(image[i*3],image[i*3+1],image[i*3+2]);
+			}
+			ujFree(jpgimg);
+			#endif
+			
+			/* Smallest JPEG decoder but only supports baseline */
+			#ifdef TINYJPEG_DECODER
 			picture_size = Get_JPEG_size(path, &w, &h);
 			image2 = malloc(picture_size);
 			if (!image2)
@@ -114,6 +158,8 @@ int Load_Image(const char* path, unsigned char image_type)
 			for (i = 0; i < (w * h)-2; i += 1) 
 				picture[i+2] = image2[i];
 			if (image2 != NULL) free(image2);
+			#endif
+			
 		break;
 		
 		default:

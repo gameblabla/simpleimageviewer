@@ -1,14 +1,15 @@
 TOOLCHAIN = /opt/gcw0-toolchain
 CC = $(TOOLCHAIN)/usr/bin/mipsel-linux-gcc
 
-CFLAGS = -O2 -mips32r2 -Wall `sdl-config --cflags` -Isrc/tinyjpegdecoder -Isrc -Isrc/sdl
+CFLAGS = -O2 -mips32r2 -Wall `sdl-config --cflags` -Isrc/ok_jpg -Isrc/lodepng -DNDEBUG -Isrc -Isrc/sdl
 CFLAGS += -DNO_FILEBROWSER 
 LDFLAGS = -lSDLmain -lSDL -s
 OUTPUT = simpleimgviewer.elf
 
 SOURCES += ./src/imgview.c 
 SOURCES += ./src/sdl/n2DLib.c ./src/lodepng.c ./src/sdl/control.c
-SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
+SOURCES += ./src/ok_jpg/ok_jpg.c ./src/lodepng/lodepng.c
+#SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
 OBJS = ${SOURCES:.c=.o}
 
 all: ${OUTPUT} pack
@@ -20,7 +21,5 @@ pack:
 	mv ${OUTPUT} ./opk/${OUTPUT}
 	
 clean:
-	rm ./src/*.o
-	rm ./src/tinyjpegdecoder/*.o
-	rm ./src/sdl/*.o
-	rm ./opk/${OUTPUT}
+	rm ./src/*.o ./src/tinyjpegdecoder/*.o ./src/lodepng/*.o ./src/ok_jpg/*.o ./src/nsp/*.o /src/sdl/*.o
+	rm ./opk/${OUTPUT} ${OUTPUT} ${OUTPUT}.tns

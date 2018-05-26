@@ -9,93 +9,36 @@ extern "C" {
  *  Buffering  *
  *             */
 
-unsigned short *BUFF_BASE_ADDRESS, *ALT_SCREEN_BASE_ADDRESS, *INV_BUFF, *temp;
-void *SCREEN_BACKUP;
-int swapped = 0;
+unsigned short *BUFF_BASE_ADDRESS;
 
 void Init_Video()
 {
+	unsigned char init_scr;
+	
 	BUFF_BASE_ADDRESS = (unsigned short*)malloc(BUFF_BYTES_SIZE);
-	if(!BUFF_BASE_ADDRESS) exit(0);
-	
-	SCREEN_BACKUP = *(void**)0xC0000010;
-	
-	// Handle monochrome screens-specific shit
-	if(is_classic)
+	if(!BUFF_BASE_ADDRESS)
 	{
-		*(int32_t*)(0xC000001C) = (*((int32_t*)0xC000001C) & ~0x0e) | 0x08;
-		
-		INV_BUFF = (unsigned short*)malloc(BUFF_BYTES_SIZE);
-		if(!INV_BUFF)
-		{
-			free(ALT_SCREEN_BASE_ADDRESS);
-			free(BUFF_BASE_ADDRESS);
-			*((int32_t*)0xC000001C) = (*((int32_t*)0xC000001C) & ~0x0e) | 0x04;
-			*(void**)0xC0000010 = SCREEN_BACKUP;
-			exit(0);
-		}
-	}
-	
-	ALT_SCREEN_BASE_ADDRESS = (unsigned short*)malloc(BUFF_BYTES_SIZE + 8);
-	if(!ALT_SCREEN_BASE_ADDRESS)
-	{
-		free(BUFF_BASE_ADDRESS);
-		*((int32_t*)0xC000001C) = (*((int32_t*)0xC000001C) & ~0x0e) | 0x04;
-		*(void**)0xC0000010 = SCREEN_BACKUP;
+		lcd_init(SCR_TYPE_INVALID);
 		exit(0);
 	}
 	
-	*(void**)0xC0000010 = ALT_SCREEN_BASE_ADDRESS;
+	init_scr = lcd_init(SCR_320x240_565);
+	if (init_scr == 0)
+	{
+		lcd_init(SCR_TYPE_INVALID);
+		exit(0);
+	}
 }
 
 void Update_screen()
 {
-	unsigned int *dest, *src, i, c;
-	// I use different methods for refreshing the screen for GS and color screens because according to my tests, the fastest for one isn't the fastest for the other
-	if(has_colors)
-	{
-		dest = (unsigned int*)ALT_SCREEN_BASE_ADDRESS;
-		src = (unsigned int*)BUFF_BASE_ADDRESS;
-		for(i = 0; i < 38400; i++)
-			*dest++ = *src++;
-	}
-	else
-	{
-		dest = (unsigned int*)INV_BUFF;
-		src = (unsigned int*)BUFF_BASE_ADDRESS;
-		for(i = 0; i < 38400; i++)
-		{
-			c = *src++;
-			c = ~c;
-			// c holds two 16-bits colors, decompose them while keeping them that way
-			*dest++ = ((c & 0x1f) + (((c >> 5) & 0x3f) >> 1) + ((c >> 11) & 0x1f)) / 3
-				+ ((((c >> 16) & 0x1f) + (((c >> 21) & 0x3f) >> 1) + ((c >> 27) & 0x1f)) / 3 << 16);
-			
-		}
-		
-		temp = *(void**)0xC0000010;
-		*(void**)0xC0000010 = INV_BUFF;
-		INV_BUFF = temp;
-		swapped = !swapped;
-	}
+	lcd_blit(BUFF_BASE_ADDRESS, SCR_320x240_565);
 }
 
 void Kill_Video()
 {
-	// Handle monochrome screens-specific shit again
-	if(is_classic)
-		*((int32_t*)0xC000001C) = (*((int32_t*)0xC000001C) & ~0x0e) | 0x04;
-	*(void**)(0xC0000010) = SCREEN_BACKUP;
-	if(swapped)
-	{
-		temp = *(void**)0xC0000010;
-		*(void**)0xC0000010 = INV_BUFF;
-		INV_BUFF = temp;
-	}
-	
-	if(is_classic) free(INV_BUFF);
-	free(ALT_SCREEN_BASE_ADDRESS);
-	free(BUFF_BASE_ADDRESS);
+	if (BUFF_BASE_ADDRESS) free(BUFF_BASE_ADDRESS);
+	lcd_init(SCR_TYPE_INVALID);
 }
 
 /*         *
@@ -301,11 +244,6 @@ inline void setPixel(unsigned int x, unsigned int y, unsigned short c)
 		*((unsigned short*)BUFF_BASE_ADDRESS + x + y * 320) = c;
 }
 
-static inline void setPixelDirect(unsigned int x, unsigned int y, unsigned short c)
-{
-	*((unsigned short*)ALT_SCREEN_BASE_ADDRESS + x + y * 320) = c;
-}
-
 void drawHLine(int y, int x1, int x2, unsigned short c)
 {
 	unsigned int _x1, _x2;
@@ -385,8 +323,8 @@ void drawSpritePart(Texture_image *src, int _x, int _y, unsigned short x_img, un
 	{
 		for(x = _x, z = x_img; x < w; x++, z++)
 		{
-			c = getPixelDirect(src, z, t);
-			setPixelDirect(x, y, c);
+			c = getPixel(src, z, t);
+			setPixel(x, y, c);
 			if(x > 319) break;
 		}
 		if(y > 239) break;

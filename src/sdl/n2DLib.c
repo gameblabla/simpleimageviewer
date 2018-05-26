@@ -32,6 +32,10 @@ void Kill_Video()
 	SDL_Quit();
 }
 
+void deinitBuffering()
+{
+}
+
 /*         *
  *  Maths  *
  *         */
@@ -126,7 +130,7 @@ int interpolatePathFloat(int curT, float _x[], float _y[], int _t[], int nb, Rec
 
 void clearBufferB()
 {
-	int i;
+	unsigned long i;
 	for(i = 0; i < 38400*2; i++)
 		((unsigned short*)screen->pixels )[i] = 0;
 }
@@ -246,6 +250,174 @@ void drawSpriteRotated(Texture_image* source, const Rect* sr, const Rect* rc, Fi
 		lsp.y += dX;
 	}
 }
+
+void fillRect(int x, int y, int w, int h, unsigned short c)
+{
+	unsigned int _x = max(x, 0), _y = max(y, 0), _w = min(320 - _x, w - _x + x), _h = min(240 - _y, h - _y + y), i, j;
+	if(_x < 320 && _y < 240)
+	{
+		for(j = _y; j < _y + _h; j++)
+			for(i = _x; i < _x + _w; i++)
+				setPixelUnsafe(i, j, c);
+	}
+}
+
+
+int isOutlinePixel(unsigned char* charfont, int x, int y)
+{
+	int xis0 = !x, xis7 = x == 7, yis0 = !y, yis7 = y == 7;
+	
+	if(xis0)
+	{
+		if(yis0)
+		{
+			return !(*charfont & 0x80) && ((*charfont & 0x40) || (charfont[1] & 0x80) || (charfont[1] & 0x40));
+		}
+		else if(yis7)
+		{
+			return !(charfont[7] & 0x80) && ((charfont[7] & 0x40) || (charfont[6] & 0x80) || (charfont[6] & 0x40));
+		}
+		else
+		{
+			return !(charfont[y] & 0x80) && (
+				(charfont[y - 1] & 0x80) || (charfont[y - 1] & 0x40) ||
+				(charfont[y] & 0x40) ||
+				(charfont[y + 1] & 0x80) || (charfont[y + 1] & 0x40));
+		}
+	}
+	else if(xis7)
+	{
+		if(yis0)
+		{
+			return !(*charfont & 0x01) && ((*charfont & 0x02) || (charfont[1] & 0x01) || (charfont[1] & 0x02));
+		}
+		else if(yis7)
+		{
+			return !(charfont[7] & 0x01) && ((charfont[7] & 0x02) || (charfont[6] & 0x01) || (charfont[6] & 0x02));
+		}
+		else
+		{
+			return !(charfont[y] & 0x01) && (
+				(charfont[y - 1] & 0x01) || (charfont[y - 1] & 0x02) ||
+				(charfont[y] & 0x02) ||
+				(charfont[y + 1] & 0x01) || (charfont[y + 1] & 0x02));
+		}
+	}
+	else
+	{
+		char b = 1 << (7 - x);
+		if(yis0)
+		{
+			return !(*charfont & b) && (
+				(*charfont & (b << 1)) || (*charfont & (b >> 1)) ||
+				(charfont[1] & (b << 1)) || (charfont[1] & b) || (charfont[1] & (b >> 1)));
+		}
+		else if(yis7)
+		{
+			return !(charfont[7] & b) && (
+				(charfont[7] & (b << 1)) || (charfont[7] & (b >> 1)) ||
+				(charfont[6] & (b << 1)) || (charfont[6] & b) || (charfont[6] & (b >> 1)));
+		}
+		else
+		{
+			return !(charfont[y] & b) && (
+				(charfont[y] & (b << 1)) || (charfont[y] & (b >> 1)) ||
+				(charfont[y - 1] & (b << 1)) || (charfont[y - 1] & b) || (charfont[y - 1] & (b >> 1)) ||
+				(charfont[y + 1] & (b << 1)) || (charfont[y + 1] & b) || (charfont[y + 1] & (b >> 1)));
+		}
+	}
+}
+
+void drawChar(int *x, int *y, int margin, char ch, unsigned short fc, unsigned short olc)
+{
+	int i, j;
+	unsigned char *charSprite;
+	if(ch == '\n')
+	{
+		*x = margin;
+		*y += 8;
+	}
+	else if(*y < 239)
+	{
+		charSprite = ch * 8 + n2DLib_font;
+		// Draw charSprite as monochrome 8*8 image using given color
+		for(i = 0; i < 8; i++)
+		{
+			for(j = 7; j >= 0; j--)
+			{
+				if((charSprite[i] >> j) & 1)
+					setPixel(*x + (7 - j), *y + i, fc);
+				else if(isOutlinePixel(charSprite, 7 - j, i))
+					setPixel(*x + (7 - j), *y + i, olc);
+			}
+		}
+		*x += 8;
+	}
+}
+
+void drawString(int *x, int *y, int _x, const char *str, unsigned short fc, unsigned short olc)
+{
+	int i, max = strlen(str) + 1;
+	for(i = 0; i < max; i++)
+		drawChar(x, y, _x, str[i], fc, olc);
+}
+
+void drawDecimal(int *x, int *y, int n, unsigned short fc, unsigned short olc)
+{
+	// Ints are in [-2147483648, 2147483647]
+	//               |        |
+	int divisor =    1000000000, num, numHasStarted = 0;
+	
+	if(n < 0)
+	{
+		drawChar(x, y, 0, '-', fc, olc);
+		n = -n;
+	}
+	while(divisor != 0)
+	{
+		num = n / divisor;
+		if(divisor == 1 || num != 0 || numHasStarted)
+		{
+			numHasStarted = 1;
+			drawChar(x, y, 0, num + '0', fc, olc);
+		}
+		n %= divisor;
+		divisor /= 10;
+	}
+}
+
+
+int numberWidth(int n)
+{
+	// Ints are in [-2147483648, 2147483647]
+	int divisor = 10, result = 8;
+	
+	if(n < 0)
+	{
+		result += 8;
+		n = -n;
+	}
+	
+	while(1)
+	{
+		if(n < divisor)
+			return result;
+		result += 8;
+		divisor *= 10;
+	}
+}
+
+int stringWidth(const char* s)
+{
+	int i, result = 0, size = strlen(s);
+	for(i = 0; i < size; i++)
+	{
+		if(s[i] >= 0x20)
+			result += 8;
+	}
+	return result;
+}
+
 
 unsigned int Getfilesize(const char *path)
 {

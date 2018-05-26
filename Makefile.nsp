@@ -1,13 +1,14 @@
 CC = nspire-gcc
 
-CFLAGS = -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s -flto
-CFLAGS += -Wall -Isrc/tinyjpegdecoder -Isrc -Isrc/nsp -Dndlib
+CFLAGS = -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s -flto `sdl-config --cflags`
+CFLAGS += -Wall -Isrc/tinyjpegdecoder -Isrc -Isrc/nsp -Dndlib -Isrc/ok_jpg -Isrc/lodepng -DNDEBUG
 LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto
 OUTPUT = simpleimgviewer
 
-SOURCES = ./src/main.c ./src/imgview.c ./src/lodepng.c 
+SOURCES = ./src/main.c ./src/imgview.c
 SOURCES +=  ./src/nsp/n2DLib.c ./src/nsp/control.c
-SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
+SOURCES += ./src/ok_jpg/ok_jpg.c ./src/lodepng/lodepng.c
+#SOURCES += ./src/tinyjpegdecoder/jidctflt.c ./src/tinyjpegdecoder/tinyjpeg.c ./src/tinyjpegdecoder/loadjpg.c
 OBJS = ${SOURCES:.c=.o}
 
 all : ${OUTPUT}
@@ -20,8 +21,5 @@ gen:
 	rm ${OUTPUT}
 	
 clean:
-	rm ./src/*.o
-	rm ./src/tinyjpegdecoder/*.o
-	rm ./src/nsp/*.o
-	rm ${OUTPUT}
-	rm ${OUTPUT}.tns
+	rm ./src/*.o ./src/tinyjpegdecoder/*.o ./src/lodepng/*.o ./src/ok_jpg/*.o ./src/nsp/*.o /src/sdl/*.o
+	rm ${OUTPUT} ${OUTPUT}.tns

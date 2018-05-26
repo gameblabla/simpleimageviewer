@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL.h>
+#include "n2DLib_font.h"
 
 #define Texture_image unsigned short
 
@@ -18,7 +19,7 @@ typedef struct
 	int w;
 } Rect;
 
-typedef unsigned short t_key;
+//typedef unsigned short t_key;
 #define itofix(x) ((x) << 8)
 #define fixtoi(x) ((x) >> 8)
 #define fixdiv(x, y) (((x) << 8) / (y))
